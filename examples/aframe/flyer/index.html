@@ -14,22 +14,194 @@
   <script src="//cdn.8thwall.com/web/xrextras/xrextras.js"></script>
 
   <!-- 8thWall Web - Replace the app key here with your own app key -->
-  <script src="//apps.8thwall.com/xrweb?appKey=XXXXXXXXX"></script>
+  <script src="//apps.8thwall.com/xrweb?appKey=h0qxJJ2aCv1C9tCoJ6cML9ukP1AvEISrz7z9pZUWbY9KF82x4qR1lzXLdjjBfXrm2wF5I7"></script>
+  <script src="gesture-detector.js"></script>
+  <script src="hold-drag.js"></script>
+  <script src="https://unpkg.com/aframe-environment-component@1.1.0/dist/aframe-environment-component.min.js"></script>
+  <script src="//cdn.8thwall.com/web/aframe/aframe-particle-system-component.min.js"></script> 
+  <script src="//cdn.rawgit.com/donmccurdy/aframe-physics-system/v4.0.1/dist/aframe-physics-system.min.js"></script>
+
+  <script>
+      // This component gives the invisible hider walls the property they need
+      AFRAME.registerComponent('hider-material', {
+        init: function() {
+          const mesh = this.el.getObject3D('mesh')
+          mesh.material.colorWrite = false
+        },
+      })
+
+      // This component hides and shows certain elements as the camera moves
+      AFRAME.registerComponent('portal', {
+        schema: {
+          width: {default: 40},
+          height: {default: 60},
+          depth: {default: 10},
+        },
+        init: function(){
+          this.camera = document.getElementById('camera')
+          this.contents = document.getElementById('portal-contents')
+          this.walls = document.getElementById('hider-walls')
+          this.portalWall = document.getElementById('portal-wall')
+          this.portalWorld = document.getElementById('portal-world')
+          this.isInPortalSpace = false
+          this.wasOutside = true
+        },
+        tick: function() {
+          const position = this.camera.object3D.position
+
+          const isOutside = position.z  > this.data.depth / 2
+          const withinPortalBounds =
+            position.y < this.data.height && Math.abs(position.x) < this.data.width / 2
+
+          if (this.wasOutside != isOutside && withinPortalBounds) {
+            this.isInPortalSpace = !isOutside
+          }
+
+          this.contents.object3D.visible = this.isInPortalSpace || isOutside
+          this.walls.object3D.visible = !this.isInPortalSpace && isOutside
+          this.portalWall.object3D.visible = this.isInPortalSpace && !isOutside
+          this.portalWorld.object3D.visible = this.isInPortalSpace
+
+          this.wasOutside = isOutside
+        }
+      })
+
+    </script>
+
+    <script>
+      // Component that places trees where the ground is clicked
+      AFRAME.registerComponent('tap-place', {
+        init: function() {
+          const ground = document.getElementById('ground')
+          ground.addEventListener('click', event => {
+            // Create new entity for the new object
+            const newElement = document.createElement('a-entity')
+
+            // The raycaster gives a location of the touch in the scene
+            const touchPoint = event.detail.intersection.point
+            const randomYRotation = Math.random() * 360
+            newElement.setAttribute('rotation', '0 0 0')
+            newElement.setAttribute('visible', 'false')
+            newElement.setAttribute('gltf-model', '#unicornModel')
+            document.querySelector('#portal-contents').appendChild(newElement)
+
+            newElement.addEventListener('model-loaded', () => {
+              // Once the model is loaded, we are ready to show it popping in using an animation
+              newElement.setAttribute('visible', 'true')
+              newElement.setAttribute('scale', '0.025 0.025 0.025')
+              newElement.object3D.position.set(touchPoint.x, -0.5, touchPoint.z)
+            })
+          })
+        }
+      })
+    </script>
+
+    <script>
+      AFRAME.registerComponent('spawn', {
+        init: function() {
+          var button = document.getElementById('button');
+          button.addEventListener('click', function(evt)
+          {
+          var contents = document.querySelector('#portal-contents');
+          for(var i = 0; i < 5; i++)
+          {
+            var enemyTest = document.createElement('a-entity');
+            enemyTest.setAttribute('id', 'enemy');
+            enemyTest.setAttribute('class', 'cantap');
+            enemyTest.setAttribute('destroy', '')
+            enemyTest.setAttribute('geometry', 'primitive: box');
+            enemyTest.setAttribute('scale', '0.1 0.1 0.1');
+            enemyTest.setAttribute('dynamic-body', '');
+            enemyTest.setAttribute('velocity', '0 1.4 0');
+            enemyTest.setAttribute('position', {x: (Math.random() * 0.9) - 0.5, y: (Math.random() * 0.75) - 1.5, z: -1.5});
+            contents.appendChild(enemyTest);
+          }
+          })
+        }
+
+      });
+    </script>
+
+    <script>
+    AFRAME.registerComponent('score-counter', {
+      schema: {
+        el: {
+          type: 'selector'
+        },
+        score:{
+          type: 'int',
+          default: 0
+        },
+      },
+
+      init: function () {
+        var scoreBoard = document.querySelector('#score');
+        var newScore = 'Score: ' + this.data.score      
+        scoreBoard.setAttribute('text', 'value',  newScore)
+      }
+    });
+    </script>
+
+
+    <script>
+      // Component that places trees where the ground is clicked
+      AFRAME.registerComponent('destroy', {
+        init: function() {
+          var sphere = this.el
+          sphere.addEventListener('click', function(evt) {
+          var scoreBoard = document.querySelector('#score');
+          scoreBoard.setAttribute('text', 'value', score)
+          var particles = document.createElement('a-entity')
+          particles.setAttribute('particle-system', 'color: #F4D03F; particle-count: 250; size: 0.25; maxAge: 0.55; velocitySpread: 0.5 0 0; velocityValue: 0 -1 0; accelerationValue: 0 2 0; accelerationSpread: 0 0 0')
+          particles.setAttribute('position', sphere.getAttribute('position'))
+          particles.setAttribute('visible', 'true')
+          particles.setAttribute('rotation', '180 0 0')
+          document.querySelector('#portal-contents').appendChild(particles)
+          setTimeout(function(){ particles.parentNode.removeChild(particles) }, 1000);
+          sphere.parentNode.removeChild(sphere)
+          })
+        }
+      })
+    </script>
+
+
+    <script>
+      // Component that places trees where the ground is clicked
+      AFRAME.registerComponent('destroy-all', {
+        init: function() {
+          var button = this.el
+          button.addEventListener('click', function(evt) {
+          var enemies = document.querySelectorAll('#enemy')
+          for(var i = enemies.length - 1; i >= 0; i--)
+          {
+            if(enemies[i].id == "enemy")
+            {
+               enemies[i].parentNode.removeChild(enemies[i])
+            }
+          }
+
+          })
+        }
+      })
+    </script>
 
 </head>
 
 <body>
 
   <a-scene
-    xrweb="disableWorldTracking: true"
-    xrextras-gesture-detector
+    xrweb='disableWorldTracking: false'
+    portal
+    score-counter
     xrextras-almost-there
     xrextras-loading
-    xrextras-runtime-error>
+    xrextras-runtime-error
+    physics="debug: true; gravity: -1; iterations: 10">
 
     <a-assets>
       <!-- Credit to Poly by Google for the model: https://poly.google.com/view/dA5osnS0Rzj -->
       <a-asset-item id="jelly-glb" src="jellyfish-model.glb"></a-asset-item>
+      <a-asset-item id="unicornModel" src="unicorn.glb"></a-asset-item>
       <img id="jelly-thumb" src="targets/video-target.jpg">
       <video
         id="jelly-video"
@@ -42,7 +214,8 @@
     </a-assets>
 
     <a-camera
-      position="0 4 10"
+      id="camera";
+      position="0 0 -5"
       raycaster="objects: .cantap"
       cursor="fuse: false; rayOrigin: mouse;">
     </a-camera>
@@ -61,8 +234,115 @@
     <!-- Note: "name:" must be set to the name of the image target uploaded to the 8th Wall Console -->
     <a-entity xrextras-named-image-target="name: model-target">
       <!-- Add a child entity that can be rotated independently of the image target. -->
-      <a-entity xrextras-one-finger-rotate gltf-model="#jelly-glb"></a-entity>
-    </a-entity>
+      <!-- Doorway -->
+
+      <a-box
+        scale="0.125 0.75 0.125"
+        position="-0.4 0 0"
+        color="cyan"></a-box>
+      <a-box
+        scale="0.125 0.75 0.125"
+        position="0.4 0 0"
+        color="cyan"></a-box>
+      <a-box
+        scale="0.75 0.125 0.125"
+        position="0 0.4 0"
+        color="cyan"></a-box>
+
+
+      <a-entity id="portal-world">
+        <a-box
+          scale="200 10 100"
+          position="0 -0.5 79.5"
+          color="blue"></a-box>
+      </a-entity>
+
+
+      <a-entity id="portal-wall">
+        <a-plane
+          scale="4 6 1"
+          rotation="180 0 0"
+          position="0 0 0"
+          ></a-plane>
+      </a-entity>
+
+
+      <a-entity id="hider-walls">
+        <a-box
+          scale="10 10 10"
+          position="0 0 -1"
+          material="color: #ffffff; transparent: false; opacity: 0.25"></a-box>
+        <a-box
+          scale="1 1 0.1"
+          position="-0.4 0 0"
+          material="color: #ffffff; transparent: false; opacity: 0.25"></a-box>
+        <a-box
+          scale="1 1 0.1"
+          position="-0.4 0 0"
+          material="color: #ffffff; transparent: false; opacity: 0.25"></a-box>
+        <a-box
+          scale="1 1 0.1"
+          position="-0.4 0 0"
+          material="color: #ffffff; transparent: false; opacity: 0.25"></a-box>
+        <a-box
+          scale="1 1 0.1"
+          position="-0.4 0 0"
+          material="color: #ffffff; transparent: false; opacity: 0.25"></a-box>
+        <a-box
+          scale="1 1 0.1"
+          position="-1 1 -5"
+          material="color: #ffffff; transparent: false; opacity: 0.25"></a-box>
+        <a-box
+          scale="1 1 0.1"
+          position="1 -1 -5"
+          material="color: #ffffff; transparent: false; opacity: 0.25"></a-box>
+        <a-box
+          scale="1 1 0.1"
+          position="-1 -1 -5"
+          material="color: #ffffff; transparent: false; opacity: 0.25"></a-box>
+      </a-entity>
+
+
+      <a-entity id="portal-contents">
+
+        <a-entity id="hider-walls">
+          <a-entity
+        geometry="primitive: box"
+        scale="1 10 0.1"
+        position="-1 0 0"
+        hider-material>
+          </a-entity>
+
+          <a-entity
+        geometry="primitive: box"
+        scale="10 1 0.1"
+        position="0 1 0"
+        hider-material>
+          </a-entity>
+
+          <a-entity
+        geometry="primitive: box"
+        scale="1 10 0.1"
+        position="1 0 0"
+        hider-material>
+          </a-entity>
+        </a-entity>
+
+          <a-entity
+        geometry="primitive: box"
+        scale="10 1 0.1"
+        position="0 -1 0"
+        hider-material>
+          </a-entity>
+
+
+        <a-text id="score" scale="0.5 0.5 1" position="-0.4 0.2 0"></a-text>
+
+        <a-entity  id="button" class="cantap" geometry="primitive: sphere" destroy-all spawn position="0.25 0.25 0" scale="0.05 0.05 0.05"> </a-entity>
+
+        <a-entity id="ground" class="cantap" environment="preset: yavapai" position="0 -1 0"></a-environment>
+
+      </a-entity>
 
   </a-scene>
 

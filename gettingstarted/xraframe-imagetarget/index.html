@@ -8,6 +8,11 @@
 
   <!-- We've included a slightly modified version of A-Frame, which fixes some polish concerns -->
   <script src="//cdn.8thwall.com/web/aframe/8frame-0.8.2.min.js"></script>
+  <script src="//cdn.8thwall.com/web/aframe/aframe-animation-component-5.1.2.min.js"></script>
+
+  <script src="https://rawgit.com/donmccurdy/aframe-extras/master/dist/aframe-extras.loaders.min.js"></script>
+  <script src="https://unpkg.com/aframe-particle-system-component@1.0.x/dist/aframe-particle-system-component.min.js"></script>
+
 
   <!-- XR Extras - provides utilities like load screen, almost there, and error handling.
          See github.com/8thwall/web/xrextras -->
@@ -15,10 +20,47 @@
 
   <!-- 8thWall Web - Replace the app key here with your own app key -->
   <script
-    src="//apps.8thwall.com/xrweb?appKey=XXXXXXXX"></script>
+    src="//apps.8thwall.com/xrweb?appKey=agohDBUkCKDTjKpBn4nkfSSL9jY6ylbK2W0Sx0CRcVEIeA1am61aRLKCtl4dJnJVL6sGNB"></script>
 
   <!-- client code -->
   <script src="index.js"></script>
+
+  <script>
+      // Component that places trees where the ground is clicked
+      AFRAME.registerComponent('tap-place', {
+        init: function() {
+          const ground = document.getElementById('frame')
+          ground.addEventListener('click', event => {
+            // Create new entity for the new object
+            const newElement = document.createElement('a-entity')
+
+            // The raycaster gives a location of the touch in the scene
+            const touchPoint = event.detail.intersection.point
+            newElement.setAttribute('position', touchPoint)
+
+            const randomYRotation = Math.random() * 360
+            newElement.setAttribute('rotation', '0 ' + randomYRotation + ' 0')
+
+            newElement.setAttribute('visible', 'false')
+            newElement.setAttribute('scale', '0.0001 0.0001 0.0001')
+
+            newElement.setAttribute('gltf-model', '#treeModel')
+            this.el.sceneEl.appendChild(newElement)
+
+            newElement.addEventListener('model-loaded', () => {
+              // Once the model is loaded, we are ready to show it popping in using an animation
+              newElement.setAttribute('visible', 'true')
+              newElement.setAttribute('animation', {
+                property: 'scale',
+                to: '0.005 0.005 0.005',
+                easing: 'easeOutElastic',
+                dur: 800,
+              })
+            })
+          })
+        }
+      })
+    </script>
 
   <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
 </head>
@@ -28,29 +70,38 @@
        improve speed. -->
   <a-scene
     antialias="true"
-    xrweb="disableWorldTracking: true"
+    xrweb="disableWorldTracking: false"
+    tap-place
     xrextras-almost-there
     xrextras-loading
     xrextras-runtime-error>
 
     <a-assets>
-      <a-asset-item id="frame-glb" src="frame.glb"></a-asset-item>
+      <a-asset-item id="frame-glb" src="new-logo-test.glb"></a-asset-item>
+      <a-asset-item id="treeModel" src="tree.glb"></a-asset-item>
     </a-assets>
 
-    <a-camera position="0 4 10"> </a-camera>
+    <a-camera position="0 4 10" raycaster="objects: .cantap"
+        cursor="
+          fuse: false;
+          rayOrigin: mouse;"> </a-camera>
 
     <a-light type="ambient" intensity="1.3"></a-light>
 
     <!-- A 3d object that tracks the image target. -->
     <a-entity image-target>
       <!--  Display a 3d model of an image frame. -->
-      <a-entity id="frame" position="0 0 0" scale=".95 .95 1" gltf-model="#frame-glb"></a-entity>
+      <a-entity id="frame" class="cantap" position="-0.03 0.05 0" scale="3.5 3.5 3.5" gltf-model="#frame-glb" rotation="90 0 0" animation-mixer="loop:repeat"></a-entity>
+      <!--<a-entity position="-0.5 0 -1" particle-system="color: yellow; size: 0.5; maxAge: 0.5; accelerationValue: 0 -1 0" rotation="0 0 25"></a-entity>
+      <a-entity position="-0.5 0 -1" particle-system="color: red; size: 0.5; maxAge: 0.5; accelerationValue: 0 -1 0" rotation="0 0 25"></a-entity>
+      <a-entity position="0.5 0 -1" particle-system="color: yellow; size: 0.5; maxAge: 0.5; accelerationValue: 0 -1 0" rotation="0 0 -25"></a-entity>
+      <a-entity position="0.5 0 -1" particle-system="color: red; size: 0.5; maxAge: 0.5; accelerationValue: 0 -1 0" rotation="0 0 -25"></a-entity>-->
 
       <!-- Add extra lighting to highlight the 3d geometry of the image frame. -->
-      <a-light type="directional" intensity="1" target="#frame" position="1.5 0.6 2.5"> </a-light>
+      <a-light type="directional" intensity="0" target="#frame" position="1.5 0.6 2.5"> </a-light>
 
       <!-- Display the image target's name as set in the 8th Wall console. -->
-      <a-text targetname value="" align="center" width="1.75" position="0 -0.55 0.04"></a-text>
+      <a-text  align="center" width="1.75" position="0 -0.55 0.04"></a-text>
     </a-entity>
 
   </a-scene>

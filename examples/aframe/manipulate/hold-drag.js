@@ -24,7 +24,7 @@ AFRAME.registerComponent('hold-drag', {
     tapRingInner.setAttribute('ring-inner', '0.5')
     tapRingInner.setAttribute('ring-outer', '0.75')
     tapRingInner.setAttribute('rotation', '-90 0 0')
-    tapRingInner.setAttribute('position', '0 0.1 0')
+    tapRingInner.setAttribute('position', '0 5.1 0')
 
     this.tapRing = document.createElement('a-entity')
     this.tapRing.id = 'tapRing'
@@ -66,8 +66,8 @@ AFRAME.registerComponent('hold-drag', {
         desiredPosition = this.camera.object3D.localToWorld(new THREE.Vector3(0, 0, -this.internalState.distance))
       }
 
-      desiredPosition.y = 2
-      this.el.object3D.position.lerp(desiredPosition, 0.2)
+      desiredPosition.y = -5
+      this.el.object3D.position.lerp(desiredPosition, 1)
 
       this.tapRing.object3D.position.x = this.el.object3D.position.x
       this.tapRing.object3D.position.z = this.el.object3D.position.z
@@ -91,12 +91,12 @@ AFRAME.registerComponent('hold-drag', {
       this.internalState.dragging = true
       this.internalState.distance = this.el.object3D.position.distanceTo(this.camera.object3D.position)
       this.tapRing.setAttribute('visible', 'true')
-      this.tapRing.object3D.scale.copy({x: 0.001, y: 0.001, z: 0.001})
+      this.tapRing.object3D.scale.copy({x: 1, y: 1, z: 1})
       this.tapRing.removeAttribute('animation__scale')
       this.tapRing.setAttribute('animation__scale', {
         property: 'scale',
         dur: 300,
-        from: '0.001 0.001 0.001',
+        from: '1 1 1',
         to: '1 1 1',
         easing: 'easeOutQuad',
       })
@@ -123,7 +123,7 @@ AFRAME.registerComponent('hold-drag', {
       this.tapRing.setAttribute('animation__scale', {
           property: 'scale',
           dur: 300,
-          to: '0.001 0.001 0.001',
+          to: '1 1 1',
           easing: 'easeInQuad',
       })
       setTimeout(() => this.tapRing.setAttribute('visible', 'false'), 300)
